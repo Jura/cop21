@@ -4,47 +4,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>COP21</title>
+  <title>COP21 quotes</title>
 
-  <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/css/foundation.min.css" />-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/css/foundation.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
-  <link rel="stylesheet" href="app.css" />
+  <style>
+    .hero {
+      height: 100vh;
+      overflow: hidden;
+    }
+    #map {
+      height: 100%;
+    }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #2ba6cb;
+    }
+    .orbit-content li div {
+      color: white;
+      background: #2ba6cb;
+      padding: 30px 40px;
+    }
+  </style>
 
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
 </head>
 
 <body>
-  
-  <!--<div class="row">
-    <div class="large-12 columns">
-      <h1>COP21 map</h1>
+
+    <div class="hero">
+      <div id="map"></div>
     </div>
-  </div>
-  
-  <div class="row">
-    <div class="large-12 columns" id="map"></div>
-  </div>-->
-  <div id="map"></div>
-  
-  
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/vendor/fastclick.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/foundation.min.js"></script>-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/vendor/fastclick.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/foundation.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
   
   <script>
-    //$(document).foundation();
+    $(document).foundation({
+      orbit: {
+        animation: 'slide',
+        timer: false,
+        //pause_on_hover: true,
+        animation_speed: 500,
+        navigation_arrows: true,
+        bullets: false,
+        circular: false,
+        variable_height: true, 
+        swipe: true
+      }
+    });
     
-    var map = L.map('map').setView([30, 0], 3);
+    var map = L.map('map').setView([0, 35], 3);
     
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
         maxZoom: 10,
         id: 'undporg.cig9rbehw004tuekrnt5bf253',
         accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'
     }).addTo(map);
     
-    var popup = L.popup().setContent('empty');
+    var popup = L.popup({
+      //maxHeight: 300,
+      autoPan: false,
+      keepInView: true,
+      minWidth: 400
+      
+    });
     
     $.getJSON('centroids.json').done(function(data){
       
@@ -54,21 +80,76 @@
       var widthMin = data.reduce(function(min, arr) {
           return arr[1] < min ? arr[1] : min;
       }, Infinity);
-      //console.log(widthMax,widthMin);
       
-      var markers = [];
+      var radius = 0, markers = [];
+      //Marker radius should fall between 3 and 50 pixels
+      var radius = Math.ceil(widthMax/50);
       for (var i=0; i<data.length; i++) {
-        markers.push(new L.circleMarker([data[i][2],data[i][3]], {weight:2, data: data[i]}).setRadius(data[i][1]/3 + 3).on('click', showpopup)); // Math.log(data[i][1]) * 5
+        // add circle markers
+        markers.push(
+          new L.circleMarker([data[i][2],data[i][3]], {weight:2, data: data[i]})
+                            .setRadius(Math.round(data[i][1]/radius) + 3)
+                            .on('click', showpopup)
+        );
       }
       var cLayer = L.layerGroup(markers).addTo(map);
     });
     
+    var loaded = {};
+    
     function showpopup(e) {
-      //console.log(e.);
-      popup.setLatLng(e.latlng).setContent(e.target.options.data[0] + ': ' + e.target.options.data[1] + ' submission' + (e.target.options.data[1] % 10 == 1 ? '' : 's')); 
-      map.openPopup(popup);
+      var country = e.target.options.data[0];
+      popup.setLatLng(e.latlng).setContent('Loading ...').addTo(map);
+    
+      // get quotes if not cached already
+      if (typeof loaded[country] == 'undefined') {
+        var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
+        var datasource = '1MR__Aal85XmQchYSpakuA3Ol3tyO4Py4BMoHkkWh'; // ID of the Fusion Table we are pulling data from
+        var sql = 'SELECT answer FROM ' + datasource + ' WHERE country = \'' + country + '\' AND answer NOT EQUAL TO \'\'';
+        var key = 'AIzaSyCu3LqZDIDAj5f7uWzIJaI0BESvOxuAuUg'; // Google API key used for requests attribution
+        $.getJSON(apiUrl, {sql: sql, key: key}).done(function(data){
+          shuffle(data.rows);
+          loaded[country] = data.rows;
+          showSlides(loaded[country]);
+        });
+      } else {
+        showSlides(loaded[country]);
+      }      
     }
+    
+    function showSlides(rows) {
+      var content = '';
+      for (var i=0; i<rows.length; i++) {
+        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + rows[i][0] + '</p></div></li>';
+      }
+      popup.setContent('<ul class="orbit-content" data-orbit>' + content + '</ul>').update();
+      $(document).foundation('orbit', 'reflow');
+    }
+    
+    // from http://stackoverflow.com/a/2450976/537584
+    function shuffle(array) {
+      var currentIndex = array.length, temporaryValue, randomIndex ;
+
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+      }
+
+      return array;
+    }
+    
+    /*function nl2br (str) {   
+        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
+    }*/
+    
   </script>
 </body>
-
 </html>
