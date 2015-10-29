@@ -22,7 +22,14 @@
     .orbit-content li div {
       color: white;
       background: #2ba6cb;
-      padding: 30px 40px;
+      padding: 0px 40px 30px;
+    }
+    .orbit-container .orbit-slide-number {
+      top: 0px;
+    }
+    .quote-country {
+      color: white;
+      /*padding: 30px 30px 0 30px;*/
     }
   </style>
 
@@ -110,19 +117,19 @@
         $.getJSON(apiUrl, {sql: sql, key: key}).done(function(data){
           shuffle(data.rows);
           loaded[country] = data.rows;
-          showSlides(loaded[country]);
+          showSlides(country);
         });
       } else {
-        showSlides(loaded[country]);
+        showSlides(country);
       }      
     }
     
-    function showSlides(rows) {
+    function showSlides(country) {
       var content = '';
-      for (var i=0; i<rows.length; i++) {
-        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + rows[i][0] + '</p></div></li>';
+      for (var i=0; i<loaded[country].length; i++) {
+        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + loaded[country][i][0] + '</p></div></li>';
       }
-      popup.setContent('<ul class="orbit-content" data-orbit>' + content + '</ul>').update();
+      popup.setContent('<h2 class="quote-country">' + country + '</h2><ul class="orbit-content" data-orbit>' + content + '</ul>').update();
       $(document).foundation('orbit', 'reflow');
     }
     
