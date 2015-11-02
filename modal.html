@@ -6,8 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>COP21 quotes</title>
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/css/foundation.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation-essential/5.5.3/css/foundation.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick-theme.min.css" />
   <style>
     .hero {
       height: 100vh;
@@ -16,21 +18,6 @@
     #map {
       height: 100%;
     }
-    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-      background: #2ba6cb;
-    }
-    .orbit-content li div {
-      color: white;
-      background: #2ba6cb;
-      padding: 0px 40px 30px;
-    }
-    .orbit-container .orbit-slide-number {
-      top: 0px;
-    }
-    .quote-country {
-      color: white;
-      /*padding: 30px 30px 0 30px;*/
-    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
@@ -38,28 +25,32 @@
 
 <body>
 
-    <div class="hero">
-      <div id="map"></div>
-    </div>
+  <div class="hero">
+    <div id="map"></div>
+  </div>
+  
+  <div id="slideshow" class="reveal-modal medium" data-reveal aria-labelledby="slideshow-title" aria-hidden="true" role="dialog">
+    <h2 id="slideshow-title"></h2>
+    <div id="slideshow-content"></div>
+    <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/vendor/fastclick.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/foundation.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation-essential/5.5.3/js/foundation.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick.min.js"></script>
   
   <script>
-    $(document).foundation({
-      orbit: {
-        animation: 'slide',
-        timer: false,
-        //pause_on_hover: true,
-        animation_speed: 500,
-        navigation_arrows: true,
-        bullets: false,
-        circular: false,
-        variable_height: true, 
-        swipe: true
-      }
+    $(document).foundation();
+    var $slideshow = $('#slideshow-content').slick({
+      appendArrows: '#slideshow',
+      autoplay: false,
+      dots: true,
+      //appendDots: '#slideshow',
+      infinite: false
+    });
+    $(document).on('opened.fndtn.reveal', function () {
+      $slideshow.slick("setPosition", 0);
     });
     
     var map = L.map('map').setView([0, 35], 3);
@@ -70,14 +61,6 @@
         id: 'undporg.cig9rbehw004tuekrnt5bf253',
         accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'
     }).addTo(map);
-    
-    var popup = L.popup({
-      //maxHeight: 500,
-      autoPan: false,
-      keepInView: true,
-      minWidth: 400
-      
-    });
     
     $.getJSON('centroids.json').done(function(data){
       
@@ -106,8 +89,7 @@
     
     function showpopup(e) {
       var country = e.target.options.data[0];
-      popup.setLatLng(e.latlng).setContent('Loading ...').addTo(map);
-    
+      
       // get quotes if not cached already
       if (typeof loaded[country] == 'undefined') {
         var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
@@ -125,13 +107,12 @@
     }
     
     function showSlides(country) {
-      var content = '';
       for (var i=0; i<loaded[country].length; i++) {
-        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + loaded[country][i][0] + '</p></div></li>';
+        $slideshow.slick('slickAdd', '<div data-country="' + country + '">' + loaded[country][i][0] + '</div>');
       }
-      popup.setContent('<h2 class="quote-country">' + country + '</h2><ul class="orbit-content" data-orbit>' + content + '</ul>').update();
-      $(document).foundation('orbit', 'reflow');
-      map.panTo(popup.getLatLng());
+      $('#slideshow-title').text(country);
+      $slideshow.slick('slickFilter', '[data-country="' + country + '"]');
+      $('#slideshow').foundation('reveal', 'open');      
     }
     
     // from http://stackoverflow.com/a/2450976/537584
@@ -153,11 +134,6 @@
 
       return array;
     }
-    
-    /*function nl2br (str) {   
-        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-    }*/
-    
   </script>
 </body>
 </html>
