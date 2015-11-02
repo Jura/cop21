@@ -62,7 +62,7 @@
       }
     });
     
-    var map = L.map('map').setView([0, 35], 3);
+    var map = L.map('map').setView([0, 0], 3);
     
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
         attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
@@ -112,7 +112,7 @@
       if (typeof loaded[country] == 'undefined') {
         var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
         var datasource = '1MR__Aal85XmQchYSpakuA3Ol3tyO4Py4BMoHkkWh'; // ID of the Fusion Table we are pulling data from
-        var sql = 'SELECT answer FROM ' + datasource + ' WHERE country = \'' + country + '\' AND answer NOT EQUAL TO \'\'';
+        var sql = 'SELECT answer, organization FROM ' + datasource + ' WHERE country = \'' + country + '\' AND answer NOT EQUAL TO \'\'';
         var key = 'AIzaSyCu3LqZDIDAj5f7uWzIJaI0BESvOxuAuUg'; // Google API key used for requests attribution
         $.getJSON(apiUrl, {sql: sql, key: key}).done(function(data){
           shuffle(data.rows);
@@ -127,7 +127,7 @@
     function showSlides(country) {
       var content = '';
       for (var i=0; i<loaded[country].length; i++) {
-        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + loaded[country][i][0] + '</p></div></li>';
+        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + loaded[country][i][0] + '</p><p><em>' + loaded[country][i][1] + '</em></p></div></li>';
       }
       popup.setContent('<h2 class="quote-country">' + country + '</h2><ul class="orbit-content" data-orbit>' + content + '</ul>').update();
       $(document).foundation('orbit', 'reflow');
