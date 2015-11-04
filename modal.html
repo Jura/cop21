@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick-theme.min.css" />
+  <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.Default.css" />-->
   <style>
     .hero {
       height: 100vh;
@@ -18,8 +20,45 @@
     #map {
       height: 100%;
     }
-  </style>
+    .winner-popup-title {
+      background: url(img/badge-512.png) no-repeat left top;
+      background-size: 64px;
+      padding-left: 70px;
+    }
+    // Small screens
+    @media only screen { 
+      .winner-popup {
+        min-width: 600px;
+      }
+    }
 
+    @media only screen and (max-width: 40em) { } /* max-width 640px, mobile-only styles, use when QAing mobile issues */
+
+    // Medium screens
+    @media only screen and (min-width: 40.063em) { } /* min-width 641px, medium screens */
+
+    @media only screen and (min-width: 40.063em) and (max-width: 64em) { } /* min-width 641px and max-width 1024px, use when QAing tablet-only issues */
+
+    // Large screens
+    @media only screen and (min-width: 64.063em) { 
+      .winner-popup {
+        min-width: 600px;
+      }
+    } /* min-width 1025px, large screens */
+
+    @media only screen and (min-width: 64.063em) and (max-width: 90em) { } /* min-width 1025px and max-width 1440px, use when QAing large screen-only issues */
+
+    // XLarge screens
+    @media only screen and (min-width: 90.063em) { } /* min-width 1441px, xlarge screens */
+
+    @media only screen and (min-width: 90.063em) and (max-width: 120em) { } /* min-width 1441px and max-width 1920px, use when QAing xlarge screen-only issues */
+
+    // XXLarge screens
+    @media only screen and (min-width: 120.063em) { 
+    
+    } /* min-width 1921px, xxlarge screens */    
+    
+  </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
 </head>
 
@@ -30,7 +69,7 @@
   </div>
   
   <div id="slideshow" class="reveal-modal medium" data-reveal aria-labelledby="slideshow-title" aria-hidden="true" role="dialog">
-    <h2 id="slideshow-title"></h2>
+    <h3 id="slideshow-title"></h3>
     <div id="slideshow-content"></div>
     <a class="close-reveal-modal" aria-label="Close">&#215;</a>
   </div>
@@ -39,101 +78,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation-essential/5.5.3/js/foundation.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.5.8/slick.min.js"></script>
-  
-  <script>
-    $(document).foundation();
-    var $slideshow = $('#slideshow-content').slick({
-      appendArrows: '#slideshow',
-      autoplay: false,
-      dots: true,
-      //appendDots: '#slideshow',
-      infinite: false
-    });
-    $(document).on('opened.fndtn.reveal', function () {
-      $slideshow.slick("setPosition", 0);
-    });
-    
-    var map = L.map('map').setView([0, 0], 3);
-    
-    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-        attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
-        maxZoom: 10,
-        id: 'undporg.cig9rbehw004tuekrnt5bf253',
-        accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'
-    }).addTo(map);
-    
-    $.getJSON('centroids.json').done(function(data){
-      
-      var widthMax = data.reduce(function(max, arr) {
-          return max >= arr[1] ? max : arr[1];
-      }, -Infinity);
-      var widthMin = data.reduce(function(min, arr) {
-          return arr[1] < min ? arr[1] : min;
-      }, Infinity);
-      
-      var radius = 0, markers = [];
-      //Marker radius should fall between 3 and 50 pixels
-      var radius = Math.ceil(widthMax/50);
-      for (var i=0; i<data.length; i++) {
-        // add circle markers
-        markers.push(
-          new L.circleMarker([data[i][2],data[i][3]], {weight:2, data: data[i]})
-                            .setRadius(Math.round(data[i][1]/radius) + 3)
-                            .on('click', showpopup)
-        );
-      }
-      var cLayer = L.layerGroup(markers).addTo(map);
-    });
-    
-    var loaded = {};
-    
-    function showpopup(e) {
-      var country = e.target.options.data[0];
-      
-      // get quotes if not cached already
-      if (typeof loaded[country] == 'undefined') {
-        var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
-        var datasource = '1MR__Aal85XmQchYSpakuA3Ol3tyO4Py4BMoHkkWh'; // ID of the Fusion Table we are pulling data from
-        var sql = 'SELECT answer, organization FROM ' + datasource + ' WHERE country = \'' + country + '\' AND answer NOT EQUAL TO \'\'';
-        var key = 'AIzaSyCu3LqZDIDAj5f7uWzIJaI0BESvOxuAuUg'; // Google API key used for requests attribution
-        $.getJSON(apiUrl, {sql: sql, key: key}).done(function(data){
-          shuffle(data.rows);
-          loaded[country] = data.rows;
-          showSlides(country);
-        });
-      } else {
-        showSlides(country);
-      }      
-    }
-    
-    function showSlides(country) {
-      for (var i=0; i<loaded[country].length; i++) {
-        $slideshow.slick('slickAdd', '<div data-country="' + country + '"><p>' + loaded[country][i][0] + '</p><p><em>' + loaded[country][i][1] + '</em></p></div>');
-      }
-      $('#slideshow-title').text(country);
-      $slideshow.slick('slickFilter', '[data-country="' + country + '"]');
-      $('#slideshow').foundation('reveal', 'open');      
-    }
-    
-    // from http://stackoverflow.com/a/2450976/537584
-    function shuffle(array) {
-      var currentIndex = array.length, temporaryValue, randomIndex ;
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js"></script>-->
+  <script src="app.js"></script>
 
-      // While there remain elements to shuffle...
-      while (0 !== currentIndex) {
-
-        // Pick a remaining element...
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-
-        // And swap it with the current element.
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
-      }
-
-      return array;
-    }
-  </script>
-</body>
+  </body>
 </html>
