@@ -69,7 +69,8 @@ oms.addListener('click', function(marker) {
 var starIcon = L.icon({
   iconUrl: 'img/star_16.png',
   iconRetinaUrl: 'img/star_16@2.png',
-  iconSize: [16, 16]
+  iconSize: [16, 16],
+  iconAnchor: [8,0]
 });
 
 var centroids = {};
@@ -85,7 +86,7 @@ $.getJSON('centroids.json').done(function (data) {
 
   var radius = 0,
     markers = [];
-  //Marker radius should fall between 3 and 50 pixels
+  //Marker radius should fall between 5 and 50 pixels
   var radius = Math.ceil(widthMax / 50);
   for (var i = 0; i < data.length; i++) {
     // populate centroids reference array
@@ -97,7 +98,7 @@ $.getJSON('centroids.json').done(function (data) {
         color: '#006600',
         data: data[i]
       })
-      .setRadius(Math.round(data[i][1] / radius) + 3)
+      .setRadius(Math.round(data[i][1] / radius) + 5)
       .on('click', showmodal)
     );
   }
