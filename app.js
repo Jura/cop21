@@ -18,8 +18,10 @@ e.push(b);delete this.unspiderfying;delete this.spiderfied;this.trigger("unspide
 d,g,f;if(null!=c.indexOf)return c.indexOf(b);a=g=0;for(f=c.length;g<f;a=++g)if(d=c[a],d===b)return a;return-1};return n}())}).call(this);}).call(this);
 /* Mon 14 Oct 2013 10:54:59 BST */
 
+// init foundation elements
 $(document).foundation();
 
+// init Slick slideshow element
 var $slideshow = $('#slideshow-content').slick({
   appendArrows: '#slideshow',
   autoplay: false,
@@ -28,12 +30,13 @@ var $slideshow = $('#slideshow-content').slick({
   infinite: false
 });
 
+// workaround for redraw slick slideshow after modal window appears (before that there is no height attribute)
 $(document).on('opened.fndtn.reveal', function () {
   $slideshow.slick("setPosition", 0);
 });
 
+// add a map, currently form MapBox account registered with online.communications@undp.org email
 var map = L.map('map').setView([0, 0], 3);
-
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
   attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a><br>* The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the United Nations.',
   maxZoom: 10,
@@ -41,11 +44,23 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
   accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'
 }).addTo(map);
 
+// init Spiderfiers
 var oms = new OverlappingMarkerSpiderfier(map, {
   keepSpiderfied: true,
   nearbyDistance: 8
 });
+var popup = new L.Popup({
+  maxHeight: 400
+});
+oms.addListener('click', function(marker) {
+  popup.setContent(marker.desc);
+  popup.setLatLng(marker.getLatLng());
+  map.openPopup(popup);
+}).addListener('spiderfy', function(markers) {
+  map.closePopup();
+});
 
+// create Star icon
 var starIcon = L.icon({
   iconUrl: 'img/star_16.png',
   iconRetinaUrl: 'img/star_16@2.png',
@@ -53,7 +68,6 @@ var starIcon = L.icon({
 });
 
 var centroids = {};
-
 // load countries
 $.getJSON('centroids.json').done(function (data) {
 
@@ -79,44 +93,31 @@ $.getJSON('centroids.json').done(function (data) {
         data: data[i]
       })
       .setRadius(Math.round(data[i][1] / radius) + 3)
-      .on('click', showpopup)
+      .on('click', showmodal)
     );
   }
   L.layerGroup(markers).addTo(map);
 
   // load winners, do it only after centroids are loaded
   $.getJSON('winners.json').done(function (winners) {
-    /*var winnersLayer = L.markerClusterGroup({
-      iconCreateFunction: function(cluster) {
-        return starIcon;
-      },
-      showCoverageOnHover: false,
-      maxClusterRadius: 8,
-      spiderfyDistanceMultiplier: 3
-    });
-    var winnersMarkers = [];
-    for (var i=0; i<winners.length; i++) {
-      winnersMarkers.push(L.marker(centroids[winners[i][2]], {icon: starIcon, riseOnHover: true, title: 'Winner!'}).bindPopup('<div class="winner-popup"><div class="winner-popup-title"><h5>' + winners[i][0] + ', ' + winners[i][2] + '</h5><b>2015 Equator Prize winner</b></div><blockquote>' + winners[i][4] + '</blockquote></div>'));
-    }
-    winnersLayer.addLayers(winnersMarkers);
-    map.addLayer(winnersLayer);*/
     for (var i=0; i<winners.length; i++) {
       var winner = new L.Marker(centroids[winners[i][2]], {
         icon: starIcon,
         riseOnHover: true,
         title: 'Winner!'
-      }).bindPopup('<div class="winner-popup"><div class="winner-popup-title"><h5>' + winners[i][0] + ', ' + winners[i][2] + '</h5><b>2015 Equator Prize winner</b></div><blockquote>' + winners[i][4] + '</blockquote></div>');
+      });
+      winner.desc = '<div class="winner-popup"><div class="winner-popup-title"><h5>' + winners[i][0] + ', ' + winners[i][2] + '</h5><b>2015 Equator Prize winner</b></div><blockquote>' + winners[i][4] + '</blockquote></div>';
       map.addLayer(winner);
       oms.addMarker(winner);
     }
   });
 });
 
+// display modal window with slideshow of quotes. Quotes located in Fusion table and cached locally for better performance
 var loaded = {};
-
-function showpopup(e) {
+function showmodal(e) {
   var country = e.target.options.data[0];
-
+  map.closePopup();
   // get quotes if not cached already
   if (typeof loaded[country] == 'undefined') {
     var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
@@ -136,6 +137,7 @@ function showpopup(e) {
   }
 }
 
+// populate slideshow
 function showSlides(country) {
   for (var i = 0; i < loaded[country].length; i++) {
     $slideshow.slick('slickAdd', '<div data-country="' + country + '"><blockquote>' + loaded[country][i][0] + '</blockquote><em>' + loaded[country][i][1] + '</em></div>');
@@ -145,23 +147,19 @@ function showSlides(country) {
   $('#slideshow').foundation('reveal', 'open');
 }
 
-// from http://stackoverflow.com/a/2450976/537584
+//Randomize array - from http://stackoverflow.com/a/2450976/537584
 function shuffle(array) {
   var currentIndex = array.length,
     temporaryValue, randomIndex;
-
   // While there remain elements to shuffle...
   while (0 !== currentIndex) {
-
     // Pick a remaining element...
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;
-
     // And swap it with the current element.
     temporaryValue = array[currentIndex];
     array[currentIndex] = array[randomIndex];
     array[randomIndex] = temporaryValue;
   }
-
   return array;
 }
