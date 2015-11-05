@@ -25,14 +25,19 @@ $(document).foundation();
 var $slideshow = $('#slideshow-content').slick({
   appendArrows: '#slideshow',
   autoplay: false,
-  dots: true,
+  //dots: true,
   //appendDots: '#slideshow',
-  infinite: false
+  infinite: false,
+  adaptiveHeight: true
+}).on('init reInit afterChange', function(event, slick, currentSlide, nextSlide){
+  //currentSlide is undefined on init -- set it to 0 in this case (currentSlide is 0 based)
+  var i = (currentSlide ? currentSlide : 0) + 1;
+  $('#slideshow-counter').text(i + '/' + slick.slideCount);  
 });
 
 // workaround for redraw slick slideshow after modal window appears (before that there is no height attribute)
 $(document).on('opened.fndtn.reveal', function () {
-  $slideshow.slick("setPosition", 0);
+  $slideshow.slick("slickGoTo", 0, true);
 });
 
 // add a map, currently form MapBox account registered with online.communications@undp.org email
