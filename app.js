@@ -147,7 +147,7 @@ function showSlides(country) {
   for (var i = 0; i < loaded[country].length; i++) {
     $slideshow.slick('slickAdd', '<div data-country="' + country + '"><blockquote>' + loaded[country][i][0] + '</blockquote><em>' + loaded[country][i][1] + '</em></div>');
   }
-  $('#slideshow-title').text(country);
+  $('#slideshow-title').text('Voices of ' + country);
   $slideshow.slick('slickFilter', '[data-country="' + country + '"]');
   $('#slideshow').foundation('reveal', 'open');
 }
