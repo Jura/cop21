@@ -43,7 +43,7 @@ $(document).on('opened.fndtn.reveal', function () {
 // add a map, currently form MapBox account registered with online.communications@undp.org email
 var map = L.map('map').setView([0, 0], 3);
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-  attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a><br>* The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the United Nations.',
+  attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a> | The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the United Nations.',
   maxZoom: 10,
   id: 'undporg.cig9rbehw004tuekrnt5bf253',
   accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'

@@ -18,9 +18,16 @@
     #map {
       height: 100%;
     }
+    #logo {
+      position: absolute;
+      right: 0;
+      bottom: 32px;
+      width: 165px;
+      height: 95px;
+      padding: 10px;
+    }
     .winner-popup-title {
-      background: url(img/badge-512.png) no-repeat left top;
-      background-size: 64px;
+      background: url(img/badge-64.png) no-repeat left top;
       padding-left: 70px;
     }
     .slick-slide {
@@ -34,6 +41,10 @@
 
   <div class="outer">
     <div id="map"></div>
+    <div id="logo">
+      <a href="http://equatorinitiative.org" target="_blank" title="Equator Initiative"><img src="img/equator-prize-logo.png" width="88" height="75" align="left" /></a>
+      <a href="http://www.undp.org" target="_blank" title="United Nations Development Programme"><img src="img/undp-logo-blue.png" width="37" height="75" alt="UNDP logo" align="right" /></a>      
+   </div>
   </div>
   
   <div id="slideshow" class="reveal-modal medium" data-reveal aria-labelledby="slideshow-title" aria-hidden="true" role="dialog">
