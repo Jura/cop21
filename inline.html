@@ -1,0 +1,163 @@
+<!doctype html>
+<html class="no-js" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COP21 quotes</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/css/foundation.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+  <style>
+    .hero {
+      height: 100vh;
+      overflow: hidden;
+    }
+    #map {
+      height: 100%;
+    }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #2ba6cb;
+    }
+    .orbit-content li div {
+      color: white;
+      background: #2ba6cb;
+      padding: 0px 40px 30px;
+    }
+    .orbit-container .orbit-slide-number {
+      top: 0px;
+    }
+    .quote-country {
+      color: white;
+      /*padding: 30px 30px 0 30px;*/
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+</head>
+
+<body>
+
+    <div class="hero">
+      <div id="map"></div>
+    </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/vendor/fastclick.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.3/js/foundation.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+  
+  <script>
+    $(document).foundation({
+      orbit: {
+        animation: 'slide',
+        timer: false,
+        //pause_on_hover: true,
+        animation_speed: 500,
+        navigation_arrows: true,
+        bullets: false,
+        circular: false,
+        variable_height: true, 
+        swipe: true
+      }
+    });
+    
+    var map = L.map('map').setView([0, 0], 3);
+    
+    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        attribution: '© <a href="https://www.mapbox.com/map-feedback/" target="_blank">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
+        maxZoom: 10,
+        id: 'undporg.cig9rbehw004tuekrnt5bf253',
+        accessToken: 'pk.eyJ1IjoidW5kcG9yZyIsImEiOiJjaWc5cmJmcWwwMDRxdjJrcjgxbnczaThvIn0.J-5uk4LED0EgvK1raqCJmg'
+    }).addTo(map);
+    
+    var popup = L.popup({
+      //maxHeight: 500,
+      autoPan: false,
+      keepInView: true,
+      minWidth: 400
+      
+    });
+    
+    $.getJSON('centroids.json').done(function(data){
+      
+      var widthMax = data.reduce(function(max, arr) {
+          return max >= arr[1] ? max : arr[1];
+      }, -Infinity);
+      var widthMin = data.reduce(function(min, arr) {
+          return arr[1] < min ? arr[1] : min;
+      }, Infinity);
+      
+      var radius = 0, markers = [];
+      //Marker radius should fall between 3 and 50 pixels
+      var radius = Math.ceil(widthMax/50);
+      for (var i=0; i<data.length; i++) {
+        // add circle markers
+        markers.push(
+          new L.circleMarker([data[i][2],data[i][3]], {weight:2, data: data[i]})
+                            .setRadius(Math.round(data[i][1]/radius) + 3)
+                            .on('click', showpopup)
+        );
+      }
+      var cLayer = L.layerGroup(markers).addTo(map);
+    });
+    
+    var loaded = {};
+    
+    function showpopup(e) {
+      var country = e.target.options.data[0];
+      popup.setLatLng(e.latlng).setContent('Loading ...').addTo(map);
+    
+      // get quotes if not cached already
+      if (typeof loaded[country] == 'undefined') {
+        var apiUrl = 'https://www.googleapis.com/fusiontables/v2/query'; // Google Fusion Table API endpoint
+        var datasource = '1MR__Aal85XmQchYSpakuA3Ol3tyO4Py4BMoHkkWh'; // ID of the Fusion Table we are pulling data from
+        var sql = 'SELECT answer, organization FROM ' + datasource + ' WHERE country = \'' + country + '\' AND answer NOT EQUAL TO \'\'';
+        var key = 'AIzaSyCu3LqZDIDAj5f7uWzIJaI0BESvOxuAuUg'; // Google API key used for requests attribution
+        $.getJSON(apiUrl, {sql: sql, key: key}).done(function(data){
+          shuffle(data.rows);
+          loaded[country] = data.rows;
+          showSlides(country);
+        });
+      } else {
+        showSlides(country);
+      }      
+    }
+    
+    function showSlides(country) {
+      var content = '';
+      for (var i=0; i<loaded[country].length; i++) {
+        content += '<li data-orbit-slide="quote-' + i + '"><div><p>' + loaded[country][i][0] + '</p><p><em>' + loaded[country][i][1] + '</em></p></div></li>';
+      }
+      popup.setContent('<h2 class="quote-country">' + country + '</h2><ul class="orbit-content" data-orbit>' + content + '</ul>').update();
+      $(document).foundation('orbit', 'reflow');
+      map.panTo(popup.getLatLng());
+    }
+    
+    // from http://stackoverflow.com/a/2450976/537584
+    function shuffle(array) {
+      var currentIndex = array.length, temporaryValue, randomIndex ;
+
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+      }
+
+      return array;
+    }
+    
+    /*function nl2br (str) {   
+        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
+    }*/
+    
+  </script>
+</body>
+</html>

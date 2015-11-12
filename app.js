@@ -52,7 +52,11 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
 // init Spiderfiers
 var oms = new OverlappingMarkerSpiderfier(map, {
   keepSpiderfied: true,
-  nearbyDistance: 8
+  nearbyDistance: 8,
+  legColors: {
+    usual: 'transparent',
+    highlighted: 'transparent'
+  }
 });
 var popup = new L.Popup({
   maxHeight: 400
@@ -112,7 +116,7 @@ $.getJSON('centroids.json').done(function (data) {
         riseOnHover: true,
         title: 'Winner!'
       });
-      winner.desc = '<div class="winner-popup"><div class="winner-popup-title"><h5>' + winners[i][0] + ', ' + winners[i][2] + '</h5><b>2015 Equator Prize winner</b></div><blockquote>' + winners[i][4] + '</blockquote></div>';
+      winner.desc = '<div class="winner-popup"><div class="winner-popup-title"><h5>' + winners[i][0] + ', ' + winners[i][2] + '</h5><b><a href="http://www.equatorinitiative.org/index.php?option=com_content&view=article&id=924&Itemid=1173&lang=en" target="_blank">2015 Equator Prize winner</a></b></div><blockquote>' + winners[i][4] + '</blockquote></div>';
       map.addLayer(winner);
       oms.addMarker(winner);
     }
